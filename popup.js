@@ -1,64 +1,26 @@
-// Initialize button with users's prefered color
-let changeColor = document.getElementById("changeColor");
-const buttonOptions = document.getElementById("buttonDiv");
-const selectedClassName = "current";
-const buttonColors = ["#3aa757", "#e8453c", "#f9bb2d", "#4688f1"];
-
-chrome.storage.sync.get("color", ({ color }) => {
-  changeColor.style.backgroundColor = color;
+chrome.runtime.onMessage.addListener(function(request, sender) {
+  if (request.action == "getSource") {
+    message.innerText = request.source;
+  }
 });
 
-function handleButtonClick(e){
-    const current = e.target.parentElement.querySelector(`.${selectedClassName}`);
-    if (current && current !== e.target){
-        current.classList.remove(selectedClassName);
-    }
-    
-    const color = e.target.dataset.color;
-    e.target.classList.add(selectedClassName);
-    chrome.storage.sync.set({color});
-    changeColor.style.backgroundColor = color;
-}
 
-function constructOptions(buttonColors) {
-    chrome.storage.sync.get("color",(data) => {
-        const currentColor = data.color;
-          console.log('Default background color set to %cgreen', `color: ${currentColor}`);
+function onWindowLoad() {
 
-        for (let buttonColor of buttonColors){
-            const button = document.createElement("button");
-            button.dataset.color = buttonColor;
-            button.style.backgroundColor = buttonColor;
-           
-           if (buttonColor === currentColor){
-               button.classList.add(selectedClassName);
-           }
-           
-           button.addEventListener("click", handleButtonClick);
-           buttonOptions.appendChild(button);
-        }  
-    })
-}
-
-constructOptions(buttonColors)
-;
-
-/*
-// When the button is clicked, inject setPageBackgroundColor into current page
-changeColor.addEventListener("click", async () => {
-  let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  //const tabId = getTabId();
+  var message = document.querySelector('#message');
 
   chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    function: setPageBackgroundColor,
+  target: {tabId: null},
+  files: ["getPagesSource.js"]
+  }, ()=> {
+    console.log('Pop up hit');
+    // If you try and inject into an extensions page or the webstore/NTP you'll get an error
+    if (chrome.runtime.lastError) {
+      message.innerText = 'There was an error injecting script : \n' + chrome.runtime.lastError.message;
+    }
   });
-});
 
-// The body of this function will be execuetd as a content script inside the
-// current page
-function setPageBackgroundColor() {
-  chrome.storage.sync.get("color", ({ color }) => {
-    document.body.style.backgroundColor = color;
-  });
 }
-*/
+
+window.onload = onWindowLoad;
